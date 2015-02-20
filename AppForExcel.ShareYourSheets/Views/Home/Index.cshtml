@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>ShareYourSheets</title>
+
+    <script type="text/javascript" src="scripts/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script type="text/javascript" src="signalr/hubs"></script>
+    <script type="text/javascript">
+    $(function () {
+      var notifier = $.connection.notifier;
+      notifier.client.users = function (lstUsers) {
+        $("#users-info").empty();
+        $.each(lstUsers, function (index, value) {
+          if (value != $.connection.hub.id) {
+            $("#users-info").append("<p>- user" + value + "</p>");
+          }
+        });
+      };
+      $.connection.hub.start().done(function () {
+        $('#connection-info').empty();
+        $('#connection-info').append('<strong>Connected as ' + $.connection.hub.id + '</strong>');
+      });
+    });
+    </script>
+</head>
+<body>
+    <h1>Share Your Sheets</h1>
+    <div id="connection-info"></div>
+    <div id="users-info">
+    </div>
+</body>
+</html>
