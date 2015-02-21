@@ -34,7 +34,7 @@ namespace AppForExcel.ShareYourSheets
 
         public void NotifyUser(string connectionId, string datas)
         {
-            Clients.Client(connectionId).ReceivedDatas(Context.ConnectionId, datas, DateTime.Now.ToString("dd/MM/yyyy"));
+            Clients.Client(connectionId).ReceivedData(Context.ConnectionId, datas, DateTime.Now.ToString("dd/MM/yyyy"));
         }
     }
 }

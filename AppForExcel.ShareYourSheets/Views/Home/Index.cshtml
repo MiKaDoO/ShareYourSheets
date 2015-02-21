@@ -5,29 +5,75 @@
 
     <script type="text/javascript" src="scripts/jquery-1.10.2.min.js"></script>
     <script type="text/javascript" src="scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
     <script type="text/javascript" src="signalr/hubs"></script>
     <script type="text/javascript">
-    $(function () {
-      var notifier = $.connection.notifier;
-      notifier.client.users = function (lstUsers) {
-        $("#users-info").empty();
-        $.each(lstUsers, function (index, value) {
-          if (value != $.connection.hub.id) {
-            $("#users-info").append("<p>- user" + value + "</p>");
-          }
-        });
-      };
-      $.connection.hub.start().done(function () {
-        $('#connection-info').empty();
-        $('#connection-info').append('<strong>Connected as ' + $.connection.hub.id + '</strong>');
-      });
-    });
+        Office.initialize = function () {
+            $(document).ready(function () {
+
+                context = Office.context.document;
+
+                function paste(data, error) {
+                    context.setSelectedDataAsync(data, { coercionType: "matrix" }, function (asyncResult) {
+                        if (asyncResult.status == Office.AsyncResultStatus.Failed) {
+                            error(asyncResult.error);
+                        }
+                    });
+                };
+
+                function getSelection(success, error) {
+                    context.getSelectedDataAsync(Office.CoercionType.Matrix, function (asyncResult) {
+                        if (asyncResult.status != Office.AsyncResultStatus.Failed) {
+                            success(asyncResult.value);
+                        } else {
+                            error(asyncResult.error);
+                        }
+                    });
+                }
+
+                var notifier = $.connection.notifier;
+
+                notifier.client.receivedData = function (user, data, date) {
+                    var elt = $("<div class='data'><p>At" + date + " from user " + user + "</p><p class='value'>" + data + "</p><p><input type='button' value='Add'></p></div>");
+
+                    elt.click(function (evt) {
+                        var data = JSON.parse($(this).find(".value").html());
+                        paste(data, function (error) {
+                            $("#error").val(error);
+                        });
+                    });
+                    $("#data-list").append(elt);
+                };
+
+                notifier.client.users = function (lstUsers) {
+                    $("#users-info").empty();
+                    $.each(lstUsers, function (index, value) {
+                        if (value != $.connection.hub.id) {
+                            $("#users-info").append("<p>- user" + value + " <input type='button' id='" + value + "' value='Send'></p>");
+
+                            $("#" + value + "").click(function (evt) {
+                                getSelection(function (data) {
+                                    notifier.server.notifyUser(value, JSON.stringify(data));
+                                }, function (error) {
+                                    $("#error").val(error);
+                                });
+                            });
+                        }
+                    });
+                };
+                $.connection.hub.start().done(function () {
+                    $('#connection-info').empty();
+                    $('#connection-info').append('<strong>Connected as ' + $.connection.hub.id + '</strong>');
+                });
+            });
+        };
     </script>
 </head>
 <body>
     <h1>Share Your Sheets</h1>
     <div id="connection-info"></div>
-    <div id="users-info">
-    </div>
+    <div id="error"></div>
+    <div id="users-info"></div>
+    <div id="data-list"></div>
 </body>
 </html>
